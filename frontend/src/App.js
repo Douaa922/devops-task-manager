@@ -16,7 +16,7 @@ function App() {
       const res = await getTasks();
       setTasks(res.data.data);
     } catch (err) {
-      console.error('Erreur chargement tâches', err);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
