@@ -9,108 +9,108 @@ on:
 jobs:
 
   backend-ci:
-    name: 🔧 Backend CI
+    name: Backend CI
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: ⚙️ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm ci
-      - name: 🔍 Lint
+      - name: Lint
         run: npm run lint
-      - name: 🧪 Tests
+      - name: Tests
         run: npm test -- --coverage --forceExit
-      - name: 📤 Upload coverage
+      - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
           path: backend/coverage/
 
   frontend-ci:
-    name: 🎨 Frontend CI
+    name: Frontend CI
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: ⚙️ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm ci
-      - name: 🔍 Lint
+      - name: Lint
         run: npm run lint
-      - name: 🏗️ Build
+      - name: Build
         run: npm run build
 
   sonarcloud:
-    name: 🔬 SonarCloud
+    name: SonarCloud
     runs-on: ubuntu-latest
     needs: [backend-ci, frontend-ci]
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 📥 Download coverage
+      - name: Download coverage
         uses: actions/download-artifact@v4
         with:
           name: backend-coverage
           path: backend/coverage/
-      - name: 🔬 SonarCloud Scan
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   security-audit:
-    name: 🛡️ Security Audit
+    name: Security Audit
     runs-on: ubuntu-latest
     needs: [backend-ci]
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: ⚙️ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: 🛡️ npm audit backend
+      - name: npm audit backend
         working-directory: backend
         run: npm audit --audit-level=critical
-      - name: 🛡️ npm audit frontend
+      - name: npm audit frontend
         working-directory: frontend
         run: npm audit --audit-level=critical
 
   docker-build-push:
-    name: 🐳 Docker Build & Push
+    name: Docker Build & Push
     runs-on: ubuntu-latest
     needs: [sonarcloud, security-audit]
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: 🔐 Login Docker Hub
+      - name: Login Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: 🏗️ Setup Buildx
+      - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
-      - name: 🐳 Push Backend
+      - name: Push Backend
         uses: docker/build-push-action@v5
         with:
           context: ./backend
@@ -120,7 +120,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/task-manager-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: 🐳 Push Frontend
+      - name: Push Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
@@ -132,11 +132,11 @@ jobs:
           cache-to: type=gha,mode=max
 
   trivy-scan:
-    name: 🔒 Trivy Scan
+    name: Trivy Scan
     runs-on: ubuntu-latest
     needs: [docker-build-push]
     steps:
-      - name: 🔒 Scan Backend image
+      - name: Scan Backend image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ secrets.DOCKER_USERNAME }}/task-manager-backend:latest'
@@ -145,7 +145,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL'
-      - name: 🔒 Scan Frontend image
+      - name: Scan Frontend image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ secrets.DOCKER_USERNAME }}/task-manager-frontend:latest'
